@@ -11,11 +11,6 @@ let package = Package(
         .executable(name: "PhysicsDiagramStudio", targets: ["PhysicsDiagramStudio"])
     ],
     targets: [
-        .executableTarget(
-            name: "PhysicsDiagramStudio",
-            linkerSettings: [
-                .linkedFramework("Security")
-            ]
-        )
+        .executableTarget(name: "PhysicsDiagramStudio")
     ]
 )

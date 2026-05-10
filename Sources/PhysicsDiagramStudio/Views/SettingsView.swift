@@ -7,7 +7,7 @@ struct SettingsView: View {
     @State private var baseURL = ""
     @State private var apiKey = ""
     @State private var model = ""
-    @State private var temperature = 0.2
+    @State private var temperature = 0.7
     @State private var testStatus: TestStatus = .idle
 
     var body: some View {
@@ -17,32 +17,48 @@ struct SettingsView: View {
                     Text("模型设置")
                         .font(.title3)
                         .fontWeight(.semibold)
-                    Text("通过 OpenAI-compatible 接口生成 SVG 图示。")
+                    Text("推荐使用GPT5.5或有多模态能力的模型")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
             }
 
-            Form {
-                TextField("Base URL", text: $baseURL)
-                    .textFieldStyle(.roundedBorder)
-                SecureField("API Key", text: $apiKey)
-                    .textFieldStyle(.roundedBorder)
-                TextField("Model", text: $model)
-                    .textFieldStyle(.roundedBorder)
+            VStack(spacing: 0) {
+                SettingsFieldRow("Base URL") {
+                    TextField("https://api.openai.com/v1", text: $baseURL)
+                        .textFieldStyle(.roundedBorder)
+                }
 
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack {
-                        Text("Temperature")
-                        Spacer()
-                        Text(temperature, format: .number.precision(.fractionLength(2)))
-                            .foregroundStyle(.secondary)
+                SettingsDivider()
+
+                SettingsFieldRow("API Key") {
+                    SecureField("sk-...", text: $apiKey)
+                        .textFieldStyle(.roundedBorder)
+                }
+
+                SettingsDivider()
+
+                SettingsFieldRow("Model") {
+                    TextField("gpt-5.5", text: $model)
+                        .textFieldStyle(.roundedBorder)
+                }
+
+                SettingsDivider()
+
+                SettingsFieldRow("Temperature") {
+                    VStack(spacing: 6) {
+                        HStack {
+                            Spacer()
+                            Text(temperature, format: .number.precision(.fractionLength(2)))
+                                .foregroundStyle(.secondary)
+                        }
+                        Slider(value: $temperature, in: 0...1, step: 0.05)
                     }
-                    Slider(value: $temperature, in: 0...1, step: 0.05)
                 }
             }
-            .formStyle(.grouped)
+            .padding(18)
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
 
             if let message = testStatus.message {
                 HStack(spacing: 8) {
@@ -59,25 +75,35 @@ struct SettingsView: View {
                 }
             }
 
-            HStack {
-                Button("测试连接") {
-                    testConnection()
-                }
-                .disabled(testStatus.isTesting)
-                .help("测试连接")
+            ZStack {
+                HStack {
+                    Button("测试连接") {
+                        testConnection()
+                    }
+                    .disabled(testStatus.isTesting)
+                    .help("测试连接")
 
-                Spacer()
+                    Spacer()
+                }
 
-                Button("取消") {
-                    dismiss()
+                HStack(spacing: 12) {
+                    Spacer()
+
+                    Button("取消") {
+                        dismiss()
+                    }
+                    .help("取消")
+                    .fixedSize()
+
+                    Button("保存") {
+                        saveAndDismiss()
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .help("保存")
+                    .fixedSize()
                 }
-                .help("取消")
-                Button("保存") {
-                    saveAndDismiss()
-                }
-                .buttonStyle(.borderedProminent)
-                .help("保存")
             }
+            .frame(width: 476)
         }
         .padding(22)
         .frame(width: 520)
@@ -116,7 +142,11 @@ struct SettingsView: View {
         testStatus = .testing
         Task {
             do {
-                try await OpenAICompatibleClient(config: draftConfig).testConnection()
+                try await OpenAICompatibleClient(
+                    config: draftConfig,
+                    session: .openAICompatibleConnectionTest,
+                    timeoutSeconds: 30
+                ).testConnection()
                 await MainActor.run {
                     testStatus = .success("连接成功。")
                 }
@@ -126,6 +156,32 @@ struct SettingsView: View {
                 }
             }
         }
+    }
+}
+
+private struct SettingsFieldRow<Content: View>: View {
+    var title: String
+    @ViewBuilder var content: Content
+
+    init(_ title: String, @ViewBuilder content: () -> Content) {
+        self.title = title
+        self.content = content()
+    }
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 18) {
+            Text(title)
+                .frame(width: 116, alignment: .leading)
+            content
+        }
+        .frame(minHeight: 46)
+    }
+}
+
+private struct SettingsDivider: View {
+    var body: some View {
+        Divider()
+            .padding(.leading, 134)
     }
 }
 

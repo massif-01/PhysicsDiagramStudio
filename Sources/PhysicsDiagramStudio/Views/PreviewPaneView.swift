@@ -9,11 +9,8 @@ struct PreviewPaneView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(store.selectedRecord?.title ?? "预览")
+                    Text(store.selectedRecord?.title ?? "图示")
                         .font(.headline)
-                    Text(store.selectedRecord == nil ? "生成后会在这里显示 PNG 预览。" : "已保存 SVG、PNG 和 HTML。")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
                 }
                 Spacer()
                 if let record = store.selectedRecord {

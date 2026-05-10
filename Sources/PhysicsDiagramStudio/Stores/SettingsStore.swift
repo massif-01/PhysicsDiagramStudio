@@ -9,16 +9,14 @@ final class SettingsStore {
     var apiKey: String
 
     @ObservationIgnored private let defaults: UserDefaults
-    @ObservationIgnored private let keychain: KeychainService
 
-    init(defaults: UserDefaults = .standard, keychain: KeychainService = KeychainService()) {
+    init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
-        self.keychain = keychain
         self.baseURL = defaults.string(forKey: DefaultsKey.baseURL) ?? "https://api.openai.com/v1"
         self.model = defaults.string(forKey: DefaultsKey.model) ?? "gpt-4.1"
         let storedTemperature = defaults.object(forKey: DefaultsKey.temperature) as? Double
-        self.temperature = storedTemperature ?? 0.2
-        self.apiKey = keychain.readAPIKey()
+        self.temperature = storedTemperature ?? 0.7
+        self.apiKey = defaults.string(forKey: DefaultsKey.apiKey) ?? ""
     }
 
     func save(baseURL: String, model: String, temperature: Double, apiKey: String) throws {
@@ -37,8 +35,6 @@ final class SettingsStore {
             throw SettingsError.invalidConfiguration
         }
 
-        try keychain.saveAPIKey(nextAPIKey)
-
         self.baseURL = nextBaseURL
         self.model = nextModel
         self.temperature = nextTemperature
@@ -47,10 +43,11 @@ final class SettingsStore {
         defaults.set(nextBaseURL, forKey: DefaultsKey.baseURL)
         defaults.set(nextModel, forKey: DefaultsKey.model)
         defaults.set(nextTemperature, forKey: DefaultsKey.temperature)
+        defaults.set(nextAPIKey, forKey: DefaultsKey.apiKey)
     }
 
     var providerConfig: ProviderConfig {
-        ProviderConfig(
+        return ProviderConfig(
             baseURL: baseURL,
             apiKey: apiKey,
             model: model,
@@ -74,4 +71,5 @@ private enum DefaultsKey {
     static let baseURL = "provider.baseURL"
     static let model = "provider.model"
     static let temperature = "provider.temperature"
+    static let apiKey = "provider.apiKey"
 }
