@@ -42,15 +42,32 @@ final class DiagramStore {
         }
     }
 
-    func add(prompt: String, result: DiagramGenerationResult) async throws -> DiagramRecord {
+    func add(prompt: String, result: DiagramGenerationResult, diagnosticID: String? = nil) async throws -> DiagramRecord {
         status = .exporting
         let slug = uniqueSlug(from: result.title)
+        let exportStartedAt = Date()
+        if let diagnosticID {
+            GenerationDiagnostics.log(diagnosticID, "artifact_export_started", fields: [
+                "slug": slug,
+                "svgChars": String(result.svg.count),
+                "title": result.title
+            ])
+        }
         let artifacts = try await exporter.writeArtifacts(
             svg: result.svg,
             title: result.title,
             slug: slug,
-            in: diagramsDirectory
+            in: diagramsDirectory,
+            diagnosticID: diagnosticID
         )
+        if let diagnosticID {
+            GenerationDiagnostics.log(diagnosticID, "artifact_export_finished", fields: [
+                "elapsedMs": GenerationDiagnostics.milliseconds(since: exportStartedAt),
+                "html": artifacts.html.lastPathComponent,
+                "png": artifacts.png.lastPathComponent,
+                "svg": artifacts.svg.lastPathComponent
+            ])
+        }
 
         let record = DiagramRecord(
             title: result.title,
@@ -62,7 +79,14 @@ final class DiagramStore {
         )
         records.insert(record, at: 0)
         selectedID = record.id
+        let indexStartedAt = Date()
         try saveIndex()
+        if let diagnosticID {
+            GenerationDiagnostics.log(diagnosticID, "index_saved", fields: [
+                "elapsedMs": GenerationDiagnostics.milliseconds(since: indexStartedAt),
+                "recordID": record.id.uuidString
+            ])
+        }
         status = .idle
         return record
     }
