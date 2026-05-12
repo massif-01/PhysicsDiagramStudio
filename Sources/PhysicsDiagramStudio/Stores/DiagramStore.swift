@@ -113,6 +113,28 @@ final class DiagramStore {
         status = .idle
     }
 
+    func delete(_ record: DiagramRecord) async throws {
+        guard let index = records.firstIndex(where: { $0.id == record.id }) else { return }
+
+        let previousRecords = records
+        let previousSelectedID = selectedID
+        records.remove(at: index)
+        if selectedID == record.id {
+            selectedID = selectionAfterDeletingRecord(at: index)
+        }
+
+        do {
+            try saveIndex()
+        } catch {
+            records = previousRecords
+            selectedID = previousSelectedID
+            throw error
+        }
+
+        try await deleteArtifacts(for: record)
+        status = .idle
+    }
+
     func markGenerating() {
         status = .generating
     }
@@ -162,9 +184,24 @@ final class DiagramStore {
         return candidate
     }
 
+    private func selectionAfterDeletingRecord(at index: Int) -> UUID? {
+        guard !records.isEmpty else { return nil }
+        let nextIndex = min(index, records.count - 1)
+        return records[nextIndex].id
+    }
+
+    private func deleteArtifacts(for record: DiagramRecord) async throws {
+        let urls = ArtifactKind.allCases.map { url(for: record, kind: $0) }
+        try await Task.detached(priority: .utility) {
+            for url in urls {
+                guard FileManager.default.fileExists(atPath: url.path) else { continue }
+                try FileManager.default.removeItem(at: url)
+            }
+        }.value
+    }
+
     private var applicationSupportDirectory: URL {
-        fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("PhysicsDiagramStudio", isDirectory: true)
+        AppStorageLocations.applicationSupportDirectory
     }
 
     private var diagramsDirectory: URL {

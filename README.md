@@ -27,7 +27,7 @@ Physics Diagram Studio 面向老师、学生、内容创作者和理科笔记用
 - `Control + P` 打开截图，框选题目区域后直接发送给模型
 - 支持 OpenAI-compatible API，可配置 Base URL、API Key、模型和温度
 - 生成结果自动保存为 SVG、PNG 和 HTML
-- 历史图示本地保存，可随时预览和导出
+- 历史图示本地保存，可随时预览、导出或删除
 
 ## 快速开始
 
@@ -53,14 +53,27 @@ Physics Diagram Studio 面向老师、学生、内容创作者和理科笔记用
 3. 点击“生成图示”。
 4. 在“图示”区域预览生成结果。
 5. 使用“导出”保存 SVG、PNG 和 HTML 文件。
+6. 在左侧历史中点击垃圾桶、右键选择“删除”，或选中后按 Delete，可删除本地记录和对应文件。
 
 ## 数据与隐私
 
 生成记录保存在本机：
 
 ```text
-~/Library/Application Support/PhysicsDiagramStudio/Diagrams
+~/Library/Application Support/com.jay.PhysicsDiagramStudio/Diagrams
 ```
+
+从 `script/build_and_run.sh` 启动的开发版会使用独立的 `com.jay.PhysicsDiagramStudio.debug` 数据目录，避免本机测试记录混入发布版。
+
+## 发布打包
+
+生成干净的 release DMG：
+
+```bash
+./script/package_release.sh v1.0.0
+```
+
+脚本会使用 release 配置构建 `.app`，并在创建 DMG 前拒绝包含本机历史索引、图示产物或诊断日志的包。
 
 请求会直接发送到你在设置中配置的 API 服务商。题目文字和附加图片会作为模型输入发送，请避免提交不希望第三方服务商处理的敏感内容。
 
