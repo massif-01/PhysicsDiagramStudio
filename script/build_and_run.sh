@@ -3,7 +3,8 @@ set -euo pipefail
 
 MODE="${1:-run}"
 APP_NAME="PhysicsDiagramStudio"
-BUNDLE_ID="com.jay.PhysicsDiagramStudio"
+BUNDLE_ID="${BUNDLE_ID:-com.jay.PhysicsDiagramStudio.debug}"
+BUILD_CONFIGURATION="${BUILD_CONFIGURATION:-debug}"
 MIN_SYSTEM_VERSION="14.0"
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -18,8 +19,8 @@ APP_ICON="$ROOT_DIR/Assets/AppIcon.icns"
 
 pkill -x "$APP_NAME" >/dev/null 2>&1 || true
 
-swift build --package-path "$ROOT_DIR"
-BUILD_BINARY="$(swift build --package-path "$ROOT_DIR" --show-bin-path)/$APP_NAME"
+swift build --package-path "$ROOT_DIR" -c "$BUILD_CONFIGURATION"
+BUILD_BINARY="$(swift build --package-path "$ROOT_DIR" -c "$BUILD_CONFIGURATION" --show-bin-path)/$APP_NAME"
 
 rm -rf "$APP_BUNDLE"
 mkdir -p "$APP_MACOS" "$APP_RESOURCES"
